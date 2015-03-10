@@ -39,8 +39,7 @@ define([
         InfoWindowBase,
         GraphicsLayer, SimpleFillSymbol,
         SimpleMarkerSymbol, SimpleLineSymbol,
-        ko,
-        Q
+        ko
         ) {
         return declare([InfoWindowBase, Evented], {
 
@@ -107,8 +106,8 @@ define([
                         { name: 'Cape Wind Report 2', id: 4, reviewsInfo: [{ name: 'Cape Wind Report 2, Review 1', id: 15 }] }
                     ]
                 };
-                this.setBLMDocumentContent(dl);
-                dl.resolve(blmDocumentContent);
+                //this.setBLMDocumentContent(dl);
+                //dl.resolve(blmDocumentContent);
 
 
                 on(this._closeButton, "click", lang.hitch(this, function () {
@@ -166,7 +165,7 @@ define([
             },
             setMap: function (map) {
                 this.inherited(arguments);
-                map.on("pan-start", lang.hitch(this, function () {
+                /*map.on("pan-start", lang.hitch(this, function () {
                     if (!this.internalZoom) {
                         this.hide();
                     } else {
@@ -179,7 +178,7 @@ define([
                     } else {
                         this.internalZoom = false;
                     }
-                }));
+                }));*/
 
                 this._map = map;
 
@@ -369,7 +368,7 @@ define([
                 }
 
             },
-            setBLMDocumentContent: function (contentDeferred) {
+            setCustomDocumentContent: function (contentDeferred) {
                 this.clearContent();
                 if (contentDeferred) {
                     contentDeferred.then(lang.hitch(this,function(blmContent) {
@@ -570,14 +569,14 @@ define([
                 if (location.y <= 460) {
                     domClass.add(this._arrow, 'arrow-up');
                     domStyle.set(this.domNode, {
-                        "left": (location.x - 302) + "px",
+                        "left": (location.x - 300) + "px",
                         "top": (location.y + 27) + "px"
                     });
                 } else {
                     domClass.remove(this._arrow, 'arrow-up');
                     domStyle.set(this.domNode, {
-                        "left": (location.x - 302) + "px",
-                        "top": (location.y - 473) + "px"
+                        "left": (location.x - 300) + "px",
+                        "top": (location.y - 590) + "px"
                     });
                 }
             },
