@@ -1,0 +1,44 @@
+//LESS Document
+//BOEM Ocsiras
+//Create June 4, 2014
+//URS | gabriel.walsh@urs.com
+
+@tile-img-path: @master-img-path;
+
+.ocsiras-dark-ui {
+  .gradient(@ui-grad-top,@ui-grad-bottom);
+  .tile('soft-black-tile.png',@tile-img-path);
+  .drop-shadow(1px,2px,2px,2px,0.3);
+}
+
+.ocsiras-light-ui {
+  .tile('soft-white-tile.png',@tile-img-path);
+}
+
+.ocsiras-light-transparent-ui {
+  .gradient(@ui-grad-light-top,@ui-grad-light-bottom);
+}
+
+
+.tile(@img,@imgpath) {
+  background-image: url('@{imgpath}@{img}');
+}
+
+.border-all-radius(@radius) {
+  border-top-right-radius: @radius;
+  border-top-left-radius: @radius;
+  border-bottom-right-radius: @radius;
+  border-top-right-radius: @radius;
+  border-bottom-right-radius: @radius;
+  border-bottom-left-radius: @radius;
+  border-bottom-left-radius: @radius;
+  border-top-left-radius: @radius;
+}
+
+.aaron-blurr(@p) {
+  filter: blur(@p);
+  -webkit-filter: blur(@p);
+  -moz-filter: blur(@p);
+  -o-filter: blur(@p);
+  -ms-filter: blur(@p);
+}

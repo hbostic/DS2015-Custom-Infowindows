@@ -1,0 +1,161 @@
+/* LESS Document */
+/* Created March 20, 2014 */
+/* for URS /*
+/* gabriel.walsh@urs.com */
+
+
+
+// Corrects `block` display not defined in IE6/7/8/9 & FF3.
+article, aside, details, figcaption, figure, footer, header, hgroup, nav, section, summary {
+  display: block;
+
+}
+
+
+.outlineMe(@col) {
+  border-color:@col;
+  border-top-style:dotted;
+  border-width:2px;
+}
+
+
+//Prevents iOS text size adjust after orientation change, without disabling zoom
+
+html {
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
+//Improves readability when focused and also mouse hovered in all browsers.
+//people.opera.com/patrickl/experiments/keyboard/test
+a:active, a:hover {
+  outline: 0;
+
+}
+
+//Prevents `sub` and `sup` affecting `line-height` in all browsers.
+//gist.github.com/413930
+
+sub, sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+
+}
+
+sup {
+  top: -0.5em;
+
+}
+
+sub {
+  bottom: -0.25em;
+
+}
+
+//Nicer &
+span.amp {
+  font-family: Baskerville, 'Goudy Old Style', Palatino, 'Book Antiqua', serif; font-style: italic;
+}
+
+.obvious {
+  .outlineMe(pink);
+  padding:10px;
+  margin:10px;
+}
+
+.animation (@name, @duration: 300ms, @delay: 0, @ease: ease) {
+  -webkit-animation: @name @duration @delay @ease;
+  -moz-animation:    @name @duration @delay @ease;
+  -ms-animation:     @name @duration @delay @ease;
+}
+
+.transition (@transition) {
+  -webkit-transition: @transition;
+  -moz-transition:    @transition;
+  -ms-transition:     @transition;
+  -o-transition:      @transition;
+}
+.transform(@string){
+  -webkit-transform: @string;
+  -moz-transform: 	 @string;
+  -ms-transform: 		 @string;
+  -o-transform: 		 @string;
+}
+.scale (@factor) {
+  -webkit-transform: scale(@factor);
+  -moz-transform: 	 scale(@factor);
+  -ms-transform: 		 scale(@factor);
+  -o-transform: 		 scale(@factor);
+}
+.rotate (@deg) {
+  -webkit-transform: rotate(@deg);
+  -moz-transform: 	 rotate(@deg);
+  -ms-transform: 		 rotate(@deg);
+  -o-transform: 		 rotate(@deg);
+}
+.rotateAgain (@deg) {
+  -webkit-transform: rotate(@deg) !important;
+  -moz-transform: 	 rotate(@deg) !important;
+  -ms-transform: 		 rotate(@deg) !important;
+  -o-transform: 		 rotate(@deg) !important;
+}
+
+.skew (@deg, @deg2) {
+  -webkit-transform:       skew(@deg, @deg2);
+  -moz-transform: 	 skew(@deg, @deg2);
+  -ms-transform: 		 skew(@deg, @deg2);
+  -o-transform: 		 skew(@deg, @deg2);
+}
+.translate (@x, @y:0) {
+  -webkit-transform:       translate(@x, @y);
+  -moz-transform: 	 translate(@x, @y);
+  -ms-transform: 		 translate(@x, @y);
+  -o-transform: 		 translate(@x, @y);
+}
+.translate3d (@x, @y: 0, @z: 0) {
+  -webkit-transform:       translate3d(@x, @y, @z);
+  -moz-transform: 	 translate3d(@x, @y, @z);
+  -ms-transform: 		 translate3d(@x, @y, @z);
+  -o-transform: 		 translate3d(@x, @y, @z);
+}
+.perspective (@value: 1000) {
+  -webkit-perspective: 	@value;
+  -moz-perspective: 	@value;
+  -ms-perspective: 	@value;
+  perspective: 		@value;
+}
+.transform-origin (@x:center, @y:center) {
+  -webkit-transform-origin: @x @y;
+  -moz-transform-origin:    @x @y;
+  -ms-transform-origin:     @x @y;
+  -o-transform-origin:      @x @y;
+}
+
+//Jean v Dorian
+@grey: @gray;
+
+@grey-darker: @gray-darker;
+@darker-grey: @gray-darker;
+@darker-gray: @gray-darker;
+
+@grey-dark: @gray-dark;
+@dark-grey: @gray-dark;
+@dark-gray: @gray-dark;
+
+@grey-lighter:@gray-lighter;
+@lighter-grey: @gray-lighter;
+@lighter-gray: @gray-lighter;
+
+@grey-light: @gray-light;
+@light-grey: @gray-light;
+@light-gray: @gray-light;
+
+//i hat writers
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+     
