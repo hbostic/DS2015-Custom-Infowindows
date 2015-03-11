@@ -71,7 +71,7 @@ define(["esri/map",
             var dl = new DeferredList([getHotels(),getRestaurants()]).then(function(results){
                 var hotels = results[0][1];
                 var res = results[1][1];
-
+                documentContent.hotelInfo = hotels;
                 def.resolve(documentContent);
             });
 
@@ -84,7 +84,10 @@ define(["esri/map",
     function getHotels(){
         var def = new Deferred();
 
-        var hotels = [];
+        var hotels = [{ name: 'Courtyard Marriott', id: 21 },
+                      { name: 'Spa Casino Resort', id: 22 },
+                      { name: 'Hard Rock', id: 22 },
+                      { name: 'Hotel California', id: 22 }];
 
 
 

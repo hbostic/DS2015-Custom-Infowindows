@@ -21,6 +21,7 @@ var dojoConfig = {
         { name: 'plugins', location: 'bower_components/durandal/js/plugins' },
         { name: 'transitions', location: 'bower_components/durandal/js/transitions' },
         { name: 'knockout', location: 'bower_components/knockout.js', main: 'knockout' },
-        { name: 'jquery', location: 'bower_components/jquery', main: 'jquery.min' }
+        { name: 'jquery', location: 'bower_components/jquery', main: 'jquery.min' },
+        { name: 'moment', location: 'bower_components/moment/min', main: 'moment.min' }
     ]
 };
