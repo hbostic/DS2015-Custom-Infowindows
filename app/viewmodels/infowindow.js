@@ -393,7 +393,7 @@ define([
                         this._nestedreviewmenus = domConstruct.create("div", { "class": "horizontal-nested-submenu-wrapper" }, this._mainpanel);
 
                         this.place('Related:', this._nestedmenuheader);
-                        var workTypes = [{ displayname: 'Projects', point: blmContent.projectInfo }, { displayname: 'Plans', point: blmContent.planInfo },
+                        var workTypes = [{ displayname: 'Hotels', point: blmContent.hotelInfo }, { displayname: 'Plans', point: blmContent.planInfo },
                             { displayname: 'Reports', point: blmContent.reportInfo }, { displayname: 'Surveys', point: blmContent.surveyInfo }];
 
                         var reviews = blmContent.reviewInfo;

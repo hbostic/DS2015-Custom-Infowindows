@@ -1,7 +1,7 @@
 
 //needed for jQuery inject else $ no work
 define.amd.jQuery = true;
-require(['durandal/system', 'durandal/app', 'durandal/viewLocator', 'jquery'],
+require(['durandal/system', 'durandal/app', 'durandal/viewLocator','services/bindings','jquery'],
     function (system, app, viewLocator, bindings) {
         system.debug(true);
 
@@ -13,7 +13,7 @@ require(['durandal/system', 'durandal/app', 'durandal/viewLocator', 'jquery'],
         });
 
 
-        //bindings.init();
+        bindings.init();
         app.start().then(function () {
             viewLocator.useConvention();
             app.setRoot('viewmodels/shell');
