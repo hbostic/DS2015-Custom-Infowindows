@@ -373,14 +373,14 @@ define([
                 if (contentDeferred) {
                     contentDeferred.then(lang.hitch(this,function(blmContent) {
 
-
+/*
 
                         if (blmContent.workTypeInfo.wtArea) {
 
                             var center = blmContent.workTypeInfo.wtArea.geometry.getExtent().getCenter();
                             this._positionTip(center);
                             this._zoomToExtent(blmContent.workTypeInfo.wtArea);
-                        }
+                        }*/
                         this.place("</span><span class='feature-explorer-header-content-type' data-bind='click:titleClick'>" + blmContent.workTypeName + "/</span><span class='title' data-bind='click:titleClick' >" + blmContent.workTypeInfo.name + "</span>", this._title);
                         this._mainpanel = domConstruct.create("div", { "class": "feature-explorer-main" }, this.domNode);
                         this._introductionarea = domConstruct.create("div", { "class": "feature-explorer-intro" }, this._mainpanel);
@@ -393,7 +393,7 @@ define([
                         this._nestedreviewmenus = domConstruct.create("div", { "class": "horizontal-nested-submenu-wrapper" }, this._mainpanel);
 
                         this.place('Related:', this._nestedmenuheader);
-                        var workTypes = [{ displayname: 'Projects', point: blmContent.projectInfo }, { displayname: 'Plans', point: blmContent.planInfo },
+                        var workTypes = [{ displayname: 'Hotels', point: blmContent.hotelInfo }, { displayname: 'Plans', point: blmContent.planInfo },
                             { displayname: 'Reports', point: blmContent.reportInfo }, { displayname: 'Surveys', point: blmContent.surveyInfo }];
 
                         var reviews = blmContent.reviewInfo;
@@ -506,7 +506,7 @@ define([
 
                         }
 
-                        if (blmContent.workTypeInfo.wtArea) {
+                        /*if (blmContent.workTypeInfo.wtArea) {
 
                             //var zoomToHTML = "<a href='#'  data-bind='click: zoomToClick'>Zoom To</a>";
 
@@ -516,9 +516,9 @@ define([
                             ko.cleanNode(this._zoomToLink);
                             ko.applyBindings(vm, this._zoomToLink);
 
-                        }
+                        }*/
 
-                        if (blmContent.attachmentsCount > 0) {
+                        /*if (blmContent.attachmentsCount > 0) {
 
 
                             var count = blmContent.attachmentsCount + ' Attachments Found';
@@ -529,7 +529,7 @@ define([
 
 
 
-                        }
+                        }*/
 
                         this.place(tHTML, this._nestedsubmenus, "only");
                         this.place(menuHTML, this._nestedmenu, "only");
