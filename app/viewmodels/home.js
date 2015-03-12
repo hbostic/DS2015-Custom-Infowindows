@@ -7,8 +7,9 @@ define(["esri/map",
     "dojo/dom-construct",
     "dojo/Deferred",
     "dojo/DeferredList",
+    "dojo/promise/all",
     "viewmodels/infowindow",
-    "dojo/domReady!"], function (Map, Search,dom,domConstruct,Deferred,DeferredList,Infowindow) {
+    "dojo/domReady!"], function (Map, Search,dom,domConstruct,Deferred,DeferredList,all,Infowindow) {
     var title = 'Home';
 
 
@@ -54,12 +55,11 @@ define(["esri/map",
             var documentContent = {
 
                 workTypeName: 'Place of Interest',
-                workTypeInfo: { wt: null, name: response.results[0][0].name, id: 1, shortdescription: 'some description',wtArea:null },
+                workTypeInfo: { wt: null, name: response.results[0][0].name, id: 1, shortdescription: 'Things near the convention center',wtArea:null },
                 hotelInfo: [],
-                planInfo: [],
-                surveyInfo: [],
-                reportInfo: [],
-                siteInfo: [],
+                restInfo: [],
+                parkInfo: [],
+                shopInfo: [],
                 reviewInfo: null,
                 hasAttachments: 0
             };
@@ -68,26 +68,57 @@ define(["esri/map",
             map.infoWindow.setCustomDocumentContent(def);
             map.infoWindow.show(response.results[0][0].feature.geometry);
 
-            var dl = new DeferredList([getHotels(),getRestaurants()]).then(function(results){
-                var hotels = results[0][1];
-                var res = results[1][1];
+            all({
+                hotels: getHotels(),
+                res: getRestaurants(),
+                parks:getParks(),
+                shops:getShops()
+            }).then(function(results){
+                var hotels = results.hotels;
+                var res = results.res;
+                var parks = results.parks;
+                var shops = results.shops;
+
+
                 documentContent.hotelInfo = hotels;
+                documentContent.resInfo = res;
+                documentContent.parkInfo = parks;
+                documentContent.shopInfo = shops;
+
+
                 def.resolve(documentContent);
             });
 
+            //I guess Deferred List are old school, using all above, but left this here because.........idk
+            /*var dl = new DeferredList([getHotels(),getRestaurants(),getParks(),getShops()]).then(function(results){
+                var hotels = results[0][1];
+                var res = results[1][1];
+                var parks = results[2][1];
+                var shops = results[3][1];
 
 
-            console.log(response.value);
+                documentContent.hotelInfo = hotels;
+                documentContent.resInfo = res;
+                documentContent.parkInfo = parks;
+                documentContent.shopInfo = shops;
+
+
+                def.resolve(documentContent);
+            });*/
+
+
+
+
         })
     }
 
     function getHotels(){
         var def = new Deferred();
 
-        var hotels = [{ name: 'Courtyard Marriott', id: 21 },
-                      { name: 'Spa Casino Resort', id: 22 },
-                      { name: 'Hard Rock', id: 22 },
-                      { name: 'Hotel California', id: 22 }];
+        var hotels = [{ name: 'Renaissance', lat:33.824683,lon:-116.538454,site: 'http://www.marriott.com/hotels/travel/pspbr-renaissance-palm-springs-hotel/' },
+                      { name: 'Spa Casino Resort',lat:33.825499,lon:-116.542899, site: 'http://www.sparesortcasino.com/' },
+                      { name: 'Hard Rock',lat:33.82213,lon:-116.545002, site: 'http://www.hardrockhotelpalmspring.com/' },
+                      { name: 'Hotel California',lat:33.801557,lon:-116.54296, site: 'http://www.palmspringshotelcalifornia.com/' }];
 
 
 
@@ -100,7 +131,57 @@ define(["esri/map",
     function getRestaurants(){
         var def = new Deferred();
 
-        var res = [];
+        var res = [{ name: 'Margaritas',lat:33.823661,lon:-116.536392, site: 'http://www.margaritasrestaurant.net/' },
+            { name: 'Chop House',lat:33.820185,lon:-116.546516, site: 'http://www.chophousepalmsprings.com/' },
+            { name: 'Thai Smile', lat:33.822843,lon:-116.545337,site: 'http://www.thaismilepalmsprings.com/' },
+            { name: 'Fisherman\'s Market & Grill',lat:33.820515,lon:-116.54582 , site: 'https://www.fishermans.com/' }];
+
+
+
+        def.resolve(res);
+
+        return def;
+
+    }
+
+    function getParks(){
+        var def = new Deferred();
+
+        var res = [{ name: 'Sunrise Park',lat:33.816973,lon:-116.526332, site: 'http://palmspringsca.gov/index.aspx?page=80' },
+            { name: 'Baristo Park',lat:33.818625,lon:-116.542768, site: 'http://palmspringsca.gov/index.aspx?page=80' },
+            { name: 'Ruth Hardy Park', lat:33.834999,lon:-116.53813,site: 'http://palmspringsca.gov/index.aspx?page=80' },
+            { name: 'Palm Springs Dog Park' ,lat:33.824731,lon:-116.512392, site: 'http://palmspringsca.gov/index.aspx?page=80' },
+            { name: 'Palm Springs Skate Park' ,lat:33.81634,lon:-116.524041, site: 'http://palmspringsca.gov/index.aspx?page=80' }];
+
+
+
+        def.resolve(res);
+
+        return def;
+
+    }
+
+    function getShops(){
+        var def = new Deferred();
+
+        var res = [{ name: 'My Little Flower Shop',lat:33.834704,lon:-116.547054, site: 'http://www.mylittleflowershop.com/' },
+            { name: 'Dazzles',lat:33.836693,lon:-116.547251, site: null },
+            { name: 'Just Fabulous',lat:33.830462,lon:-116.547057, site: 'http://www.bjustfabulous.com/' }];
+
+
+
+        def.resolve(res);
+
+        return def;
+
+    }
+
+    function getReviews(){
+        var def = new Deferred();
+
+        var res = [{ reviewId: 'Good Acoustics'},
+            { reviewId: '1.5M Sq ft' },
+            { reviewId: 'Cold' },{ reviewId: 'Not enough bathrooms' }];
 
 
 

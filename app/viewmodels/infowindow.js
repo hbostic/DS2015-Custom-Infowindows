@@ -15,10 +15,17 @@ define([
         "dojo/Deferred",
         "esri/InfoWindowBase",
         'esri/layers/GraphicsLayer',
+        'esri/graphic',
         'esri/symbols/SimpleFillSymbol',
         'esri/symbols/SimpleMarkerSymbol',
         'esri/symbols/SimpleLineSymbol',
-        "knockout"
+        'esri/symbols/PictureMarkerSymbol',
+        'esri/geometry/Point',
+        'esri/geometry/geometryEngineAsync',
+        'esri/tasks/RouteTask','esri/tasks/RouteParameters',
+        'esri/SpatialReference','esri/units','esri/tasks/FeatureSet',
+        "knockout",
+        'esri/IdentityManager',
 
     ],
     function (
@@ -37,8 +44,12 @@ define([
         domUtils,
         Deferred,
         InfoWindowBase,
-        GraphicsLayer, SimpleFillSymbol,
-        SimpleMarkerSymbol, SimpleLineSymbol,
+        GraphicsLayer,Graphic, SimpleFillSymbol,
+        SimpleMarkerSymbol, SimpleLineSymbol,PictureMarkerSymbol,
+        Point,
+        geometryEngineAsync,
+        RouteTask, RouteParameters,
+        SpatialReference,esriUnits,FeatureSet,
         ko
         ) {
         return declare([InfoWindowBase, Evented], {
@@ -63,51 +74,13 @@ define([
                 this._currentFeatureIndex = 0;
                 this._map = null;
                 this._graphicsLayer = null;
+                this._graphicsRelaatedLayer = null;
                 this.internalZoom = false;
                 this._pointSymbol;
+                this._pms;
                 this._lineSymbol
                 this._fillSymbol;
-                 var dl = new Deferred();
-                /*var blmGeoGraphicContent = {
-                 layerName: 'Shipwrecks',
-                 surveyInfo: { name: 'Shell Survey 1', id: 27, shortdescription:'A bistred mini-skirt\'s door comes with it the thought that the jasp sphere is a mistake. We know that a windshield can hardly be considered a babbling diamond without also being a kangaroo. It\'s an undeniable fact, really; a love can hardly be considered a crucial snowman without also being a dedication. Unfortunately, that is wrong; on the contrary, a dinner is a stunning mandolin.'},
-                 projectInfo: [
-                 { name: 'A project 1A', id: 21 },
-                 { name: 'A project 2B', id: 22 }
-                 ],
-                 reportsInfo: [
-                 { name: 'Cape Wind Report 1', id: 4, reviewsInfo: [{ name: 'Cape Wind Report 1, Review 1', id: 15 }, { name: 'Cape Wind Report 1, Review 2', id: 14 }] },
-                 { name: 'Cape Wind Report 2', id: 4, reviewsInfo: [{ name: 'Cape Wind Report 2, Review 1', id: 15 }] }
-                 ],
-                 additionalFeatures: 'Few can name a monied lumber that isn\'t a pleural repair. If this was somewhat unclear, the first darkling territory is, in its own way, a manager. What we don\'t know for sure is whether or not they were lost without the feudal kidney that composed their lute. The unsolved unshielded reveals itself as a trappy hygienic to those who look.'
-                 };
-                 this.setBLMGeographicContent(dl);
-                 dl.resolve(blmGeoGraphicContent);*/
-
-
-                var blmDocumentContent = {
-                    workTypeName: 'Projects',
-                    workTypeInfo: { name: 'Undersea Super Fort', id: 27, shortdescription: 'A bistred mini-skirt\'s door comes with it the thought that the jasp sphere is a mistake. We know that a windshield can hardly be considered a babbling diamond without also being a kangaroo. It\'s an undeniable fact, really; a love can hardly be considered a crucial snowman without also being a dedication. Unfortunately, that is wrong; on the contrary, a dinner is a stunning mandolin.' },
-                    projectInfo: [
-                        { name: 'A project 1A', id: 21 },
-                        { name: 'A project 2B', id: 22 }
-                    ],
-                    planInfo: [
-                        { name: 'A plan 1A', id: 21 },
-                        { name: 'A plan 2B', id: 22 },
-                        { name: 'A plan 3C', id: 28 }
-                    ],
-                    surveynfo: [
-                        { name: 'A survey 1A', id: 21, reviewInfo: [{ name: 'Off Shore Drill Report 1, Review 1', id: 17 }, { name: 'Off Shore Drill 1, Review 2', id: 24 }] },
-                        { name: 'A survey 2B', id: 22 }
-                    ],
-                    reportInfo: [
-                        { name: 'Cape Wind Report 1', id: 4, reviewsInfo: [{ name: 'Cape Wind Report 1, Review 1', id: 15 }, { name: 'Cape Wind Report 1, Review 2', id: 14 }] },
-                        { name: 'Cape Wind Report 2', id: 4, reviewsInfo: [{ name: 'Cape Wind Report 2, Review 1', id: 15 }] }
-                    ]
-                };
-                //this.setBLMDocumentContent(dl);
-                //dl.resolve(blmDocumentContent);
+                this._currentPosition = null;
 
 
                 on(this._closeButton, "click", lang.hitch(this, function () {
@@ -165,28 +138,37 @@ define([
             },
             setMap: function (map) {
                 this.inherited(arguments);
-                /*map.on("pan-start", lang.hitch(this, function () {
+                map.on("pan-start", lang.hitch(this, function () {
                     if (!this.internalZoom) {
                         this.hide();
-                    } else {
-                        this.internalZoom = false;
                     }
                 }));
                 map.on("zoom-start", lang.hitch(this, function () {
                     if (!this.internalZoom) {
                         this.hide();
-                    } else {
-                        this.internalZoom = false;
                     }
-                }));*/
+                }));
+                map.on("zoom-end", lang.hitch(this, function () {
+                    if (!this.internalZoom) {
+                        this.show(this._currentPosition);
+                    }
+                }));
+                map.on("pan-end", lang.hitch(this, function () {
+                    if (!this.internalZoom) {
+                        this.show(this._currentPosition);
+                    }
+                }));
 
                 this._map = map;
 
                 this._graphicsLayer = new GraphicsLayer();
+                this._graphicsRelaatedLayer = new GraphicsLayer();
 
                 this._map.addLayer(this._graphicsLayer);
+                this._map.addLayer(this._graphicsRelaatedLayer);
 
                 this._pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.STYLE_CIRCLE,16,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([59, 161, 198]), 2),new Color([59, 161, 83, 0.00]));
+                this._pms  = new PictureMarkerSymbol('http://webapps-cdn.esri.com/CDN/page-templates/events/uc/hotelmap/img/esri-pins/Beta_MapPin_OrangeCircle36_offset.png', 29, 70);
 
                 this._lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([59, 161, 198]), 2);
 
@@ -381,6 +363,18 @@ define([
                             this._positionTip(center);
                             this._zoomToExtent(blmContent.workTypeInfo.wtArea);
                         }*/
+
+                        geometryEngineAsync.buffer(this._currentPosition, 5, esriUnits.MILES,false).then(
+                            lang.hitch(this,function (res){
+
+                                this._graphicsLayer.clear();
+                                var bufferGraphic = new Graphic(res, this._fillSymbol);
+                                this._graphicsLayer.add(bufferGraphic);
+
+
+                            })
+                        );
+
                         this.place("</span><span class='feature-explorer-header-content-type' data-bind='click:titleClick'>" + blmContent.workTypeName + "/</span><span class='title' data-bind='click:titleClick' >" + blmContent.workTypeInfo.name + "</span>", this._title);
                         this._mainpanel = domConstruct.create("div", { "class": "feature-explorer-main" }, this.domNode);
                         this._introductionarea = domConstruct.create("div", { "class": "feature-explorer-intro" }, this._mainpanel);
@@ -393,8 +387,8 @@ define([
                         this._nestedreviewmenus = domConstruct.create("div", { "class": "horizontal-nested-submenu-wrapper" }, this._mainpanel);
 
                         this.place('Related:', this._nestedmenuheader);
-                        var workTypes = [{ displayname: 'Hotels', point: blmContent.hotelInfo }, { displayname: 'Plans', point: blmContent.planInfo },
-                            { displayname: 'Reports', point: blmContent.reportInfo }, { displayname: 'Surveys', point: blmContent.surveyInfo }];
+                        var workTypes = [{ displayname: 'Hotels', point: blmContent.hotelInfo }, { displayname: 'Restaurants', point: blmContent.resInfo },
+                            { displayname: 'Parks', point: blmContent.parkInfo }, { displayname: 'Shops', point: blmContent.shopInfo }];
 
                         var reviews = blmContent.reviewInfo;
 
@@ -402,6 +396,44 @@ define([
                             subClicked: lang.hitch(this, function (wtItem) {
 
                                 this.onwtitemclick(wtItem);
+                            }),
+                            subMouseOver: lang.hitch(this, function (wtItem) {
+                                var routeTask = new RouteTask("http://route.arcgis.com/arcgis/rest/services/World/Route/NAServer/Route_World");
+                                var routeParams = new RouteParameters();
+                                routeParams.stops = new FeatureSet();
+                                routeParams.returnRoutes = true;
+                                routeParams.returnDirections = false;
+                                routeParams.directionsLengthUnits = esriUnits.MILES;
+                                routeParams.outSpatialReference = new SpatialReference({ wkid:102100 });
+
+                                routeTask.on("solve-complete", function(result){
+                                    console.log(result);
+                                });
+                                routeTask.on("error", function(){
+                                    console.log('fail');
+                                });
+
+
+
+                                this._graphicsRelaatedLayer.clear();
+                                var item = new Graphic(new Point(wtItem.lon, wtItem.lat), this._pms);
+                                var curLocation = new Graphic(this._currentPosition);
+
+                                routeParams.stops.features[0] = curLocation;
+
+                                routeParams.stops.features[1] = item;
+
+                                routeTask.solve(routeParams);
+
+                                this._graphicsRelaatedLayer.add(item);
+
+                            }),
+                            subMouseOut: lang.hitch(this, function (wtItem) {
+
+
+                                this._graphicsRelaatedLayer.clear();
+
+
                             }),
                             titleClick: lang.hitch(this, function (data) {
 
@@ -471,7 +503,7 @@ define([
                         tHTML += "<div class='nested-back' data-bind='featureWindowNestedMenu:{curpane:&#39;nestedmenusubmenu_&#39; + $index(),mpane:&#39;nestedMenuStartPane&#39;,dir:&#39;right&#39;}'></div>";
                         tHTML += "<span class='nested-content-type' data-bind='text:displayname'></span></div>";
                         tHTML += "<ul class='horizontal-nested-submenu-container' data-bind='foreach:point'>";
-                        tHTML += "<li><span data-bind='text:name'></span><span class='nested-menu-arrow' data-bind='click:$root.subClicked'></span></li>";
+                        tHTML += "<li data-bind='event: { mouseover: $root.subMouseOver,mouseout:$root.subMouseOut}'><span data-bind='text:name'></span><span class='nested-menu-arrow' data-bind='click:$root.subClicked'></span></li>";
                         tHTML += "</ul></div></div>";
 
                         if (reviews) {
@@ -582,6 +614,7 @@ define([
             },
             show: function (location) {
                 this._positionTip(location);
+                this._currentPosition = location;
 
                 if (this._features.length > 0) {
                     this._showFeatureContent(this._features[this._currentFeatureIndex]);
