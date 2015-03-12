@@ -74,7 +74,8 @@ define(["esri/map",
                     hasAttachments: 0
                 };
 
-
+                map.infoWindow.clearFeatures();
+                map.infoWindow.clearContent();
                 map.infoWindow.setCustomDocumentContent(def);
                 map.infoWindow.show(response.results[0][0].feature.geometry);
 
@@ -125,7 +126,8 @@ define(["esri/map",
 
 
                 }
-
+                map.infoWindow.clearFeatures();
+                map.infoWindow.clearContent();
                 map.infoWindow.setFeatures(response.results[0]);
                 map.infoWindow.show(response.results[0][0].feature.geometry);
 

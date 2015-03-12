@@ -8,8 +8,7 @@ define([
         "dojo/dom-style",
         "dojo/_base/lang",
         "dojo/dom-class",
-        "dojo/fx/Toggler",
-        "dojo/fx",
+        'dojo/number',
         'esri/Color',
         "esri/domUtils",
         "dojo/Deferred",
@@ -20,6 +19,7 @@ define([
         'esri/symbols/SimpleMarkerSymbol',
         'esri/symbols/SimpleLineSymbol',
         'esri/symbols/PictureMarkerSymbol',
+        'esri/symbols/TextSymbol','esri/symbols/Font',
         'esri/geometry/Point',
         'esri/geometry/geometryEngineAsync',
         'esri/tasks/RouteTask','esri/tasks/RouteParameters',
@@ -38,14 +38,14 @@ define([
         domStyle,
         lang,
         domClass,
-        Toggler,
-        coreFx,
+        Number,
         Color,
         domUtils,
         Deferred,
         InfoWindowBase,
         GraphicsLayer,Graphic, SimpleFillSymbol,
-        SimpleMarkerSymbol, SimpleLineSymbol,PictureMarkerSymbol,
+        SimpleMarkerSymbol, SimpleLineSymbol,PictureMarkerSymbol,TextSymbol,
+        Font,
         Point,
         geometryEngineAsync,
         RouteTask, RouteParameters,
@@ -112,10 +112,32 @@ define([
             },
             _showFeatureContent: function (data) {
 
+
+                if(!data || !data.feature){return;}
                 var infoTemplate = data.feature.getInfoTemplate();
                 if (typeof infoTemplate.content === 'function') {
                     this.setContent(infoTemplate.content(data));
+
+                    //I know that I am getting a promise, but to be
+                    //a good citizen I should also work with functions
+                    //to do so, I would just make this function (_showFeatureContent)
+                    //responsible for calling the function and passing the response
+                    //to setCustomDocumentContent
+
+                    //setCustomDocumentContent would no longer accept a promise
+                    //just the data
+
+                    //this function would be responsible for resolving the promise if
+                    //one was provided
+                    //just use dojo.when to handle functions or promises
+                    //http://dojotoolkit.org/reference-guide/1.10/dojo/when.html
+
+                    //only other case to handle is a string template
+                    //this function would handle that as well using
+                    //the substitute function in esri/lang
+                    //https://developers.arcgis.com/javascript/jsapi/esri.lang-amd.html
                 }
+
             },
             _getCurrentFeature: function() {
 
@@ -223,135 +245,10 @@ define([
                 this._features = [];
 
             },
-            setBLMGeographicContent: function (contentDeferred) {
 
-
-                this.clearContent();
-
-                if (contentDeferred) {
-                    contentDeferred.then(lang.hitch(this, function (blmContent) {
-
-                        var feat = this._features[this._currentFeatureIndex].feature;
-                        var center;
-                        if (feat.geometry.type === "point" || feat.geometry.type === "multipoint") {
-
-                            center = feat.geometry;
-                        } else {
-
-                            center = feat.geometry.getExtent().getCenter();
-                        }
-
-                        this._positionTip(center);
-
-                        this._leftpanelscroll = domConstruct.create("div", { "id": "feature-explorer-scroller", "data-bind": "initScrollbar: { scrollContainerID: 'feature-explorer-scroller' }" }, this.domNode);
-                        this._content = domConstruct.create("div", { "class": "feature-explorer-content" }, this._leftpanelscroll);
-                        this._rightpanel = domConstruct.create("div", { "class": "feature-explorer-right" }, this.domNode);
-                        this._introductionarea = domConstruct.create("div", { "class": "feature-explorer-intro" }, this._rightpanel);
-                        this._nestedmenuheader = domConstruct.create("div", { "class": "nested-menu-header" }, this._rightpanel);
-                        this._nestedmenu = domConstruct.create("div", { "class": "horizontal-nested-menu-wrapper submenu-show", "id": "nestedMenuStartPane" }, this._rightpanel);
-                        this._nestedsubmenus = domConstruct.create("div", { "class": "horizontal-nested-submenu-wrapper" }, this._rightpanel);
-                        this._count = domConstruct.create("div", { "data-bind": "text:recordCount" }, this._displayCount);
-
-
-                        this._mapfeatureActions = domConstruct.create("div", {}, this._footer);
-
-                        this.place('<span class="feature-explorer-header-content-type">' + blmContent.layerName + '/</span><span class="title">' + blmContent.displayField + '</span>', this._title);
-                        this.place(blmContent.shortdescription, this._introductionarea);
-                        //this.place('<button class="plus-btn"><span class="plus-btn-icon"></span></button> <div class="plus-btn-help">Create a new site</div>', this._usercontrols);
-                        this.place('Related:', this._nestedmenuheader);
-                        var workTypes = [{ displayname: 'Surveys', point: blmContent.surveyInfo }, { displayname: 'Sites', point: blmContent.siteInfo }];
-                        this.place(blmContent.additionalFeatures, this._leftpanelscroll);
-                        var menuHTML = "<ul class='horizontal-nested-menu' data-bind='foreach:workTypes' >";
-                        menuHTML += "<li><span data-bind='text:displayname'></span>";
-                        menuHTML += "<span class='count' data-bind='text:&#39;(&#39; + point.length  + &#39;)&#39;'></span>";
-                        menuHTML += "<span class='nested-menu-arrow' data-bind='featureWindowNestedMenu: {curpane:&#39;nestedMenuStartPane&#39;,mpane:&#39;nestedmenusubmenu_&#39; + $index(),dir:&#39;left&#39;}'></span>";
-                        menuHTML += "</li></ul>";
-
-                        var tHTML = "<div data-bind='foreach:workTypes' >";
-                        tHTML += "<div class='horizontal-nested-menu-wrapper submenu-hide' data-bind='attr:{id:&#39;nestedmenusubmenu_&#39; + $index()}'>";
-                        tHTML += "<div class='nested-navigation'>";
-                        tHTML += "<div class='nested-back' data-bind='featureWindowNestedMenu:{curpane:&#39;nestedmenusubmenu_&#39; + $index(),mpane:&#39;nestedMenuStartPane&#39;,dir:&#39;right&#39;}'></div>";
-                        tHTML += "<span class='nested-content-type' data-bind='text:displayname'></span></div>";
-                        tHTML += "<ul class='horizontal-nested-submenu-container' data-bind='foreach:point'>";
-                        tHTML += "<li><span data-bind='text:name'></span><span class='nested-menu-arrow' data-bind='click:$root.subClicked'></span></li>";
-                        tHTML += "</ul></div></div>";
-
-                        var recordCount = ko.observable(this._recordCountDisplay());
-
-
-                        this.place(tHTML,this._nestedsubmenus,'replace');
-                        this.place(menuHTML, this._nestedmenu, 'replace');
-
-                        var vm = {
-                            recordCount:recordCount,
-                            subClicked: lang.hitch(this, function (wtItem) {
-
-                                this.onwtitemclick(wtItem);
-                            }),
-                            workTypes: workTypes,
-                            nextClick: lang.hitch(this, function (data, evt) {
-                                var feature = this._getNextFeature();
-                                this._showFeatureContent(feature);
-                                recordCount(this._recordCountDisplay());
-
-                            }),
-                            prevClick: lang.hitch(this, function (data, evt) {
-                                var feature = this._getPrevFeature();
-                                this._showFeatureContent(feature);
-                                recordCount(this._recordCountDisplay());
-
-                            }),
-                            addToSiteClick: lang.hitch(this, function (data, evt) {
-                                this.onaddtositeclick(this._features[this._currentFeatureIndex]);
-
-                            }),
-                            removeFromSiteClick: lang.hitch(this, function (data, evt) {
-                                this.onremovefromsiteclick(this._features[this._currentFeatureIndex]);
-
-                            })
-
-                        };
-
-                        var curFeat = this._features[this._currentFeatureIndex];
-
-                        if (curFeat && curFeat.feature.attributes && curFeat.feature.attributes.SiteId) {
-                            if (curFeat.feature.attributes.SiteId.toLowerCase() !== 'null') {
-                                this._removeFromSite = domConstruct.create('a', { 'href': '#', 'innerHTML': '  Remove From Site  ', 'data-bind': 'click: removeFromSiteClick' }, this._footer);
-                                ko.cleanNode(this._removeFromSite);
-                                ko.applyBindings(vm, this._removeFromSite);
-                            } else {
-                                this._addToSite = domConstruct.create('a', { 'href': '#', 'innerHTML': '  Add To Site  ', 'data-bind': 'click: addToSiteClick' }, this._footer);
-                                ko.cleanNode(this._addToSite);
-                                ko.applyBindings(vm, this._addToSite);
-                            }
-
-                        }
-
-
-
-
-
-                        ko.cleanNode(this._nestedsubmenus);
-                        ko.cleanNode(this._nestedmenu);
-                        ko.cleanNode(this._leftpanelscroll);
-                        ko.cleanNode(this._nextfeature);
-                        ko.cleanNode(this._prevfeature);
-                        ko.cleanNode(this._count);
-
-
-                        ko.applyBindings(vm, this._nestedsubmenus);
-                        ko.applyBindings(vm, this._nestedmenu);
-                        ko.applyBindings(vm, this._leftpanelscroll);
-                        ko.applyBindings(vm, this._nextfeature);
-                        ko.applyBindings(vm, this._prevfeature);
-                        ko.applyBindings(vm, this._count);
-
-                    }));
-                }
-
-            },
             setCustomDocumentContent: function (contentDeferred) {
                 this.clearContent();
+
                 if (contentDeferred) {
                     contentDeferred.then(lang.hitch(this,function(blmContent) {
 
@@ -411,14 +308,32 @@ define([
                                 routeParams.outSpatialReference = new SpatialReference({ wkid:102100 });
 
                                 var item = new Graphic(new Point(wtItem.lon, wtItem.lat), this._pms);
+                                var font = new Font("18px", Font.STYLE_NORMAL, Font.VARIANT_NORMAL, Font.WEIGHT_BOLDER);
+
 
                                 routeTask.on("solve-complete", lang.hitch(this, function(route){
 
 
                                     this._graphicsRelatedLayer.clear();
+                                    var miles = Number.format(route.result.routeResults[0].route.attributes.Total_Miles,{places:2});
+
+                                    var textSymbol = new TextSymbol("Distance: " + miles + " miles" ,
+                                                        font, new Color([204, 102, 51]));
+                                    textSymbol.yoffset = 40;
+
+                                    var disGraphic = new esri.Graphic(item.geometry, textSymbol);
+
                                     route.result.routeResults[0].route.setSymbol(this._lineSymbol);
                                     this._graphicsRelatedLayer.add(route.result.routeResults[0].route);
                                     this._graphicsRelatedLayer.add(item);
+                                    this._graphicsRelatedLayer.add(disGraphic);
+
+
+
+
+
+
+
                                 }));
                                 routeTask.on("error", function(){
                                     console.log('fail');
@@ -587,7 +502,9 @@ define([
             _recordCountDisplay:function() {
                 var count = this._currentFeatureIndex + 1;
 
-                return count + " of " + this._features.length;
+                var maxcount = this._features.length === 0 ? 1 : this._features.length;
+
+                return count + " of " + maxcount;
             },
             _positionTip:function(location) {
                 if (location.spatialReference) {
