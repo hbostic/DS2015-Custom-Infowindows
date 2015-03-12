@@ -74,7 +74,7 @@ define([
                 this._currentFeatureIndex = 0;
                 this._map = null;
                 this._graphicsLayer = null;
-                this._graphicsRelaatedLayer = null;
+                this._graphicsRelatedLayer = null;
                 this.internalZoom = false;
                 this._pointSymbol;
                 this._pms;
@@ -162,10 +162,10 @@ define([
                 this._map = map;
 
                 this._graphicsLayer = new GraphicsLayer();
-                this._graphicsRelaatedLayer = new GraphicsLayer();
+                this._graphicsRelatedLayer = new GraphicsLayer();
 
                 this._map.addLayer(this._graphicsLayer);
-                this._map.addLayer(this._graphicsRelaatedLayer);
+                this._map.addLayer(this._graphicsRelatedLayer);
 
                 this._pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.STYLE_CIRCLE,16,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([59, 161, 198]), 2),new Color([59, 161, 83, 0.00]));
                 this._pms  = new PictureMarkerSymbol('http://webapps-cdn.esri.com/CDN/page-templates/events/uc/hotelmap/img/esri-pins/Beta_MapPin_OrangeCircle36_offset.png', 29, 70);
@@ -177,7 +177,7 @@ define([
             },
             setContent:function(promise) {
 
-                this.setBLMGeographicContent(promise);
+                this.setCustomDocumentContent(promise);
 
             },
             setFeatures:function(features) {
@@ -364,7 +364,7 @@ define([
                             this._zoomToExtent(blmContent.workTypeInfo.wtArea);
                         }*/
 
-                        geometryEngineAsync.buffer(this._currentPosition, 5, esriUnits.MILES,false).then(
+                        geometryEngineAsync.buffer(this._currentPosition, 2.5, 9030,false).then(
                             lang.hitch(this,function (res){
 
                                 this._graphicsLayer.clear();
@@ -385,14 +385,18 @@ define([
                         this._reviewheader = domConstruct.create("div", { "class": "nested-menu-header" }, this._mainpanel);
                         this._reviews = domConstruct.create("div", { "class": "horizontal-nested-submenu-wrapper submenu-show", "id": "nestedReviewStartPane" }, this._mainpanel);
                         this._nestedreviewmenus = domConstruct.create("div", { "class": "horizontal-nested-submenu-wrapper" }, this._mainpanel);
+                        this._count = domConstruct.create("div", { "data-bind": "text:recordCount" }, this._displayCount);
 
-                        this.place('Related:', this._nestedmenuheader);
+                        //not being used here.....but could be
+                        //this.place('Related:', this._nestedmenuheader);
                         var workTypes = [{ displayname: 'Hotels', point: blmContent.hotelInfo }, { displayname: 'Restaurants', point: blmContent.resInfo },
                             { displayname: 'Parks', point: blmContent.parkInfo }, { displayname: 'Shops', point: blmContent.shopInfo }];
 
                         var reviews = blmContent.reviewInfo;
+                        var recordCount = ko.observable(this._recordCountDisplay());
 
                         var vm = {
+                            recordCount:recordCount,
                             subClicked: lang.hitch(this, function (wtItem) {
 
                                 this.onwtitemclick(wtItem);
@@ -406,17 +410,24 @@ define([
                                 routeParams.directionsLengthUnits = esriUnits.MILES;
                                 routeParams.outSpatialReference = new SpatialReference({ wkid:102100 });
 
-                                routeTask.on("solve-complete", function(result){
-                                    console.log(result);
-                                });
+                                var item = new Graphic(new Point(wtItem.lon, wtItem.lat), this._pms);
+
+                                routeTask.on("solve-complete", lang.hitch(this, function(route){
+
+
+                                    this._graphicsRelatedLayer.clear();
+                                    route.result.routeResults[0].route.setSymbol(this._lineSymbol);
+                                    this._graphicsRelatedLayer.add(route.result.routeResults[0].route);
+                                    this._graphicsRelatedLayer.add(item);
+                                }));
                                 routeTask.on("error", function(){
                                     console.log('fail');
                                 });
 
 
 
-                                this._graphicsRelaatedLayer.clear();
-                                var item = new Graphic(new Point(wtItem.lon, wtItem.lat), this._pms);
+
+
                                 var curLocation = new Graphic(this._currentPosition);
 
                                 routeParams.stops.features[0] = curLocation;
@@ -425,43 +436,22 @@ define([
 
                                 routeTask.solve(routeParams);
 
-                                this._graphicsRelaatedLayer.add(item);
+
 
                             }),
                             subMouseOut: lang.hitch(this, function (wtItem) {
 
 
-                                this._graphicsRelaatedLayer.clear();
+                                this._graphicsRelatedLayer.clear();
 
 
                             }),
                             titleClick: lang.hitch(this, function (data) {
 
                                 var wtItem = {
-                                    name: data.workTypeInfo.name,
-                                    id: data.workTypeInfo.id,
-                                    wttName: data.workTypeInfo.wt.WorkTypeType().Name()
+                                    name: data.workTypeInfo.name
                                 };
-                                this.onwtitemclick(wtItem);
-                            }),
-                            reviewClick: lang.hitch(this, function (isCurrent,data,evt) {
-
-                                var reviewItem = null;
-                                if (isCurrent) {
-                                    reviewItem = {
-                                        isCurrent: isCurrent,
-                                        parentWorkTypeTypeId: data.reviews.curRv.parentWtTypeId,
-                                        reviewId: data.reviews.curRv.reviewId
-                                    };
-                                } else {
-                                    reviewItem = {
-                                        isCurrent: isCurrent,
-                                        parentWorkTypeTypeId: data.parentWtTypeId,
-                                        reviewId: data.reviewId
-                                    };
-                                }
-
-                                this.onreviewitemclick(reviewItem);
+                                this.onitemtitleclick(wtItem);
                             }),
                             showAttachmentsClick:lang.hitch(this,function(data) {
                                 console.log('showing attachements');
@@ -472,17 +462,21 @@ define([
                             reviews: reviews,
                             workTypes: workTypes,
                             workTypeInfo: blmContent.workTypeInfo,
-                            nextClick: lang.hitch(this, function (isCurrent, data, evt) {
-                                console.log('next clicked');
+                            nextClick: lang.hitch(this, function (data, evt) {
+                                var feature = this._getNextFeature();
+                                this._showFeatureContent(feature);
+                                recordCount(this._recordCountDisplay());
 
                             }),
-                            prevClick: lang.hitch(this, function (isCurrent, data, evt) {
-                                console.log('prev clicked');
+                            prevClick: lang.hitch(this, function (data, evt) {
+                                var feature = this._getPrevFeature();
+                                this._showFeatureContent(feature);
+                                recordCount(this._recordCountDisplay());
 
                             }),
                             zoomToClick: lang.hitch(this, function (data, evt) {
-
-                                this._zoomToExtent(data.workTypeInfo.wtArea);
+                                //just an example of how to provide zoom to
+                                //this._zoomToExtent(data.workTypeInfo.wtArea);
 
 
                             })
@@ -572,6 +566,7 @@ define([
                         ko.cleanNode(this._title);
                         ko.cleanNode(this._nextfeature);
                         ko.cleanNode(this._prevfeature);
+                        ko.cleanNode(this._count);
 
 
 
@@ -581,6 +576,7 @@ define([
                         ko.applyBindings(vm, this._title);
                         ko.applyBindings(vm, this._nextfeature);
                         ko.applyBindings(vm, this._prevfeature);
+                        ko.applyBindings(vm, this._count);
 
 
 
@@ -633,21 +629,20 @@ define([
             onwtitemclick: function (wtItem) {
                 // This can be left empty, it will be used as the extension point
             },
-            onreviewitemclick: function (reviewItem) {
+            onitemtitleclick: function (wtItem) {
                 // This can be left empty, it will be used as the extension point
             },
-            onaddtositeclick: function (feature) { },
-            onremovefromsiteclick:function(){},
-            /*resize: function (width, height) {
-             domStyle.set(this._content, {
-             "width": width + "px",
-             "height": height + "px"
-             });
-             domStyle.set(this._title, {
-             "width": width + "px"
-             });
 
-             },*/
+            resize: function (width, height) {
+                domStyle.set(this._content, {
+                    "width": width + "px",
+                    "height": height + "px"
+                });
+                domStyle.set(this._title, {
+                    "width": width + "px"
+                });
+
+             },
             destroy: function () {
                 domConstruct.destroy(this.domNode);
                 this._closeButton = this._title = this._content = null;

@@ -3,13 +3,14 @@
  */
 define(["esri/map",
     "esri/dijit/Search",
+    "esri/InfoTemplate",
     "dojo/dom",
     "dojo/dom-construct",
     "dojo/Deferred",
     "dojo/DeferredList",
     "dojo/promise/all",
     "viewmodels/infowindow",
-    "dojo/domReady!"], function (Map, Search,dom,domConstruct,Deferred,DeferredList,all,Infowindow) {
+    "dojo/domReady!"], function (Map, Search,InfoTemplate,dom,domConstruct,Deferred,DeferredList,all,Infowindow) {
     var title = 'Home';
 
 
@@ -41,6 +42,14 @@ define(["esri/map",
             infoWindow: infoWindow
         });
 
+        map.infoWindow.on('itemtitleclick',function(data){
+            alert('You clicked the tile ' + data.name + ' hooray!');
+        });
+
+        map.infoWindow.on('wtitemclick',function(data){
+            window.open(data.site);
+        });
+
         var s = new Search({
             map: map,
             enableInfoWindow:false
@@ -48,63 +57,82 @@ define(["esri/map",
         s.startup();
 
         s.on('search-results',function(response){
-            var def = new Deferred();
 
 
 
-            var documentContent = {
+            if(response.results[0].length === 1){
+                var def = new Deferred();
+                var documentContent = {
 
-                workTypeName: 'Place of Interest',
-                workTypeInfo: { wt: null, name: response.results[0][0].name, id: 1, shortdescription: 'Things near the convention center',wtArea:null },
-                hotelInfo: [],
-                restInfo: [],
-                parkInfo: [],
-                shopInfo: [],
-                reviewInfo: null,
-                hasAttachments: 0
-            };
-
-
-            map.infoWindow.setCustomDocumentContent(def);
-            map.infoWindow.show(response.results[0][0].feature.geometry);
-
-            all({
-                hotels: getHotels(),
-                res: getRestaurants(),
-                parks:getParks(),
-                shops:getShops()
-            }).then(function(results){
-                var hotels = results.hotels;
-                var res = results.res;
-                var parks = results.parks;
-                var shops = results.shops;
+                    workTypeName: 'Place of Interest',
+                    workTypeInfo: { wt: null, name: response.results[0][0].name, id: 1, shortdescription: 'Things near the ' + response.results[0][0].name,wtArea:null },
+                    hotelInfo: [],
+                    restInfo: [],
+                    parkInfo: [],
+                    shopInfo: [],
+                    reviewInfo: null,
+                    hasAttachments: 0
+                };
 
 
-                documentContent.hotelInfo = hotels;
-                documentContent.resInfo = res;
-                documentContent.parkInfo = parks;
-                documentContent.shopInfo = shops;
+                map.infoWindow.setCustomDocumentContent(def);
+                map.infoWindow.show(response.results[0][0].feature.geometry);
+
+                all({
+                    hotels: getHotels(),
+                    res: getRestaurants(),
+                    parks:getParks(),
+                    shops:getShops()
+                }).then(function(results){
+                    var hotels = results.hotels;
+                    var res = results.res;
+                    var parks = results.parks;
+                    var shops = results.shops;
 
 
-                def.resolve(documentContent);
-            });
-
-            //I guess Deferred List are old school, using all above, but left this here because.........idk
-            /*var dl = new DeferredList([getHotels(),getRestaurants(),getParks(),getShops()]).then(function(results){
-                var hotels = results[0][1];
-                var res = results[1][1];
-                var parks = results[2][1];
-                var shops = results[3][1];
+                    documentContent.hotelInfo = hotels;
+                    documentContent.resInfo = res;
+                    documentContent.parkInfo = parks;
+                    documentContent.shopInfo = shops;
 
 
-                documentContent.hotelInfo = hotels;
-                documentContent.resInfo = res;
-                documentContent.parkInfo = parks;
-                documentContent.shopInfo = shops;
+                    def.resolve(documentContent);
+                });
+
+                //I guess Deferred List are old school, using all above, but left this here because.........idk
+                /*var dl = new DeferredList([getHotels(),getRestaurants(),getParks(),getShops()]).then(function(results){
+                 var hotels = results[0][1];
+                 var res = results[1][1];
+                 var parks = results[2][1];
+                 var shops = results[3][1];
 
 
-                def.resolve(documentContent);
-            });*/
+                 documentContent.hotelInfo = hotels;
+                 documentContent.resInfo = res;
+                 documentContent.parkInfo = parks;
+                 documentContent.shopInfo = shops;
+
+
+                 def.resolve(documentContent);
+                 });*/
+            }
+            else{//set features
+
+                for(var i=0; i < response.results[0].length; i++){
+                    var template = new InfoTemplate();
+                    template.setContent(getInfowindowContent);
+                    response.results[0][i].feature.setInfoTemplate(template);
+
+
+                }
+
+                map.infoWindow.setFeatures(response.results[0]);
+                map.infoWindow.show(response.results[0][0].feature.geometry);
+
+            }
+
+
+
 
 
 
@@ -186,6 +214,49 @@ define(["esri/map",
 
 
         def.resolve(res);
+
+        return def;
+
+    }
+
+    function getInfowindowContent(data){
+        var def = new Deferred();
+
+        var documentContent = {
+
+            workTypeName: 'Place of Interest',
+            workTypeInfo: { wt: null, name: data.name, id: 1, shortdescription: 'Things near the ' + data.name,wtArea:null },
+            hotelInfo: [],
+            restInfo: [],
+            parkInfo: [],
+            shopInfo: [],
+            reviewInfo: null,
+            hasAttachments: 0
+        };
+
+
+
+
+        all({
+            hotels: getHotels(),
+            res: getRestaurants(),
+            parks:getParks(),
+            shops:getShops()
+        }).then(function(results) {
+            var hotels = results.hotels;
+            var res = results.res;
+            var parks = results.parks;
+            var shops = results.shops;
+
+
+            documentContent.hotelInfo = hotels;
+            documentContent.resInfo = res;
+            documentContent.parkInfo = parks;
+            documentContent.shopInfo = shops;
+
+
+            def.resolve(documentContent);
+        });
 
         return def;
 
